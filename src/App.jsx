@@ -136,6 +136,7 @@ const GROUP_COLORS = {
 };
 
 const STORAGE_KEY = "mundial2026_scores_v2";
+const POLLA_STORAGE_KEY = "mundial2026_polla_v1";
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(window.innerWidth < 600);
@@ -336,6 +337,158 @@ function KOMatch({ matchKey, scores, onScoreChange }) {
   );
 }
 
+function PollaTab({ isMobile, scores }) {
+  const [pollas, setPollas] = useState([]);
+  const [newPlayerName, setNewPlayerName] = useState("");
+  const [pollaName, setPollaName] = useState("Polla 2026");
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(POLLA_STORAGE_KEY);
+      if (saved) setPollas(JSON.parse(saved));
+    } catch (e) {}
+  }, []);
+
+  const savePollas = (updatedPollas) => {
+    try {
+      localStorage.setItem(POLLA_STORAGE_KEY, JSON.stringify(updatedPollas));
+      setPollas(updatedPollas);
+    } catch (e) {}
+  };
+
+  const addPlayer = () => {
+    if (newPlayerName.trim()) {
+      const newPollas = [...pollas, { id: Date.now(), name: newPlayerName, points: 0, createdAt: new Date().toISOString() }];
+      savePollas(newPollas);
+      setNewPlayerName("");
+    }
+  };
+
+  const deletePlayer = (id) => {
+    const updated = pollas.filter(p => p.id !== id);
+    savePollas(updated);
+  };
+
+  const calculatePoints = (player) => {
+    let pts = 0;
+    Object.keys(scores).forEach(k => {
+      if (k.includes("name")) return;
+      const s = scores[k];
+      if (s?.A !== "" && s?.B !== "" && s?.A !== undefined && s?.B !== undefined) {
+        const a = parseInt(s.A), b = parseInt(s.B);
+        if (a > b) pts += 3;
+        else if (a === b) pts += 1;
+      }
+    });
+    return pts;
+  };
+
+  const sortedPollas = [...pollas].sort((a, b) => calculatePoints(b) - calculatePoints(a));
+
+  return (
+    <div>
+      {/* Agregar participante */}
+      <div style={{ background: "#1e2240", borderRadius: 12, padding: "16px", marginBottom: 20 }}>
+        <h3 style={{ margin: "0 0 12px 0", color: "#f4c430", fontSize: 14, fontWeight: 700 }}>📝 Agregar Participante</h3>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <input
+            type="text"
+            placeholder="Nombre del jugador"
+            value={newPlayerName}
+            onChange={e => setNewPlayerName(e.target.value)}
+            onKeyPress={e => e.key === "Enter" && addPlayer()}
+            style={{
+              flex: 1, minWidth: 150, padding: "10px 12px", borderRadius: 8,
+              border: "1px solid #2a2d4a", background: "rgba(255,255,255,0.05)",
+              color: "#fff", fontSize: 12, outline: "none"
+            }}
+          />
+          <button
+            onClick={addPlayer}
+            style={{
+              padding: "10px 18px", borderRadius: 8, border: "none",
+              background: "#f4c430", color: "#1a1a2e", fontWeight: 700,
+              fontSize: 12, cursor: "pointer"
+            }}
+          >
+            + Agregar
+          </button>
+        </div>
+      </div>
+
+      {/* Ranking */}
+      <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 12, overflow: "hidden", border: "1px solid #1e2240" }}>
+        <div style={{ background: "#f4c43020", padding: "14px 16px", borderBottom: "1px solid #1e2240" }}>
+          <h3 style={{ margin: 0, color: "#f4c430", fontSize: 14, fontWeight: 700 }}>🏆 Ranking de Participantes</h3>
+        </div>
+
+        {sortedPollas.length === 0 ? (
+          <div style={{ padding: "40px 16px", textAlign: "center", color: "#666" }}>
+            <p style={{ fontSize: 12, margin: 0 }}>No hay participantes aún. ¡Agrega uno!</p>
+          </div>
+        ) : (
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: "#1e2240" }}>
+                  <th style={{ padding: "12px", textAlign: "center", color: "#f4c430", fontWeight: 700, width: 40 }}>#</th>
+                  <th style={{ padding: "12px", textAlign: "left", color: "#f4c430", fontWeight: 700 }}>Jugador</th>
+                  <th style={{ padding: "12px", textAlign: "center", color: "#f4c430", fontWeight: 700, width: 60 }}>Puntos</th>
+                  <th style={{ padding: "12px", textAlign: "center", color: "#f4c430", fontWeight: 700, width: 50 }}>Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedPollas.map((player, idx) => {
+                  const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : "";
+                  const pts = calculatePoints(player);
+                  return (
+                    <tr key={player.id} style={{ 
+                      background: idx < 3 ? `rgba(244,196,48,${0.1 - idx * 0.03})` : "transparent",
+                      borderBottom: "1px solid #1e2240"
+                    }}>
+                      <td style={{ padding: "12px", textAlign: "center", fontWeight: 700, color: "#f4c430" }}>
+                        {medal || (idx + 1)}
+                      </td>
+                      <td style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: idx < 3 ? "#f4c430" : "#ccc" }}>
+                        {player.name}
+                      </td>
+                      <td style={{ padding: "12px", textAlign: "center", fontWeight: 800, color: idx < 3 ? "#f4c430" : "#999", fontSize: 14 }}>
+                        {pts}
+                      </td>
+                      <td style={{ padding: "12px", textAlign: "center" }}>
+                        <button
+                          onClick={() => deletePlayer(player.id)}
+                          style={{
+                            padding: "6px 10px", borderRadius: 6, border: "1px solid #e74c3c",
+                            background: "transparent", color: "#e74c3c", fontSize: 11,
+                            cursor: "pointer", fontWeight: 600
+                          }}
+                        >
+                          ✕
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div style={{ marginTop: 20, padding: "12px 14px", background: "rgba(52,152,219,0.1)", borderRadius: 8, borderLeft: "3px solid #3498db" }}>
+        <p style={{ margin: 0, fontSize: 11, color: "#999", lineHeight: 1.5 }}>
+          💡 Los puntos se calculan automáticamente basado en tus predicciones:
+          <br />• +3 puntos por acertar un ganador
+          <br />• +1 punto por acertar un empate
+          <br />• El ranking se actualiza en tiempo real
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function Mundial2026() {
   const [scores, setScores] = useState({});
   const [expandedGroups, setExpandedGroups] = useState({ A:true });
@@ -399,7 +552,7 @@ export default function Mundial2026() {
 
       {/* ── TABS ── */}
       <div style={{ background:"#111327",borderBottom:"1px solid #1e2240",display:"flex",maxWidth:900,margin:"0 auto",overflowX:"auto" }}>
-        {[["grupos","⚽ Grupos"],["eliminatoria","🏆 Eliminatoria"]].map(([tab,label])=>(
+        {[["grupos","⚽ Grupos"],["eliminatoria","🏆 Eliminatoria"],["polla","🎲 Polla"]].map(([tab,label])=>(
           <button key={tab} onClick={()=>setActiveTab(tab)} style={{
             padding:"11px 18px",border:"none",background:"transparent",whiteSpace:"nowrap",
             color:activeTab===tab?"#f4c430":"#777",fontWeight:activeTab===tab?700:500,fontSize:13,
@@ -452,12 +605,16 @@ export default function Mundial2026() {
             ))}
           </div>
         )}
+
+        {activeTab==="polla" && (
+          <PollaTab isMobile={isMobile} scores={scores} />
+        )}
       </div>
 
       {/* ── STICKY BOTTOM NAV on mobile ── */}
       {isMobile && (
         <div style={{ position:"fixed",bottom:0,left:0,right:0,background:"#0d1023",borderTop:"1px solid #1e2240",display:"flex",zIndex:100 }}>
-          {[["grupos","⚽ Grupos"],["eliminatoria","🏆 Eliminatoria"]].map(([tab,label])=>(
+          {[["grupos","⚽ Grupos"],["eliminatoria","🏆 Eliminatoria"],["polla","🎲 Polla"]].map(([tab,label])=>(
             <button key={tab} onClick={()=>setActiveTab(tab)} style={{
               flex:1,padding:"12px 0",border:"none",background:"transparent",
               color:activeTab===tab?"#f4c430":"#666",fontWeight:activeTab===tab?700:500,fontSize:12,
