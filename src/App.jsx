@@ -748,7 +748,7 @@ export default function Mundial2026() {
       {/* ── STICKY BOTTOM NAV on mobile ── */}
       {isMobile && (
         <div style={{ position:"fixed",bottom:0,left:0,right:0,background:"#0d1023",borderTop:"1px solid #1e2240",display:"flex",zIndex:100 }}>
-          {[["grupos","⚽"],["eliminatoria","🏆"],["predicciones","📋"],["polla","🎲"]].map(([tab,label])=>(
+          {[["grupos","⚽"],["eliminatoria","🏆"]].map(([tab,label])=>(
             <button key={tab} onClick={()=>setActiveTab(tab)} style={{
               flex:1,padding:"10px 0",border:"none",background:"transparent",
               color:activeTab===tab?"#f4c430":"#666",fontWeight:activeTab===tab?700:500,fontSize:13,
