@@ -137,7 +137,7 @@ const GROUP_COLORS = {
 
 const STORAGE_KEY = "mundial2026_scores_v2";
 const POLLA_STORAGE_KEY = "mundial2026_polla_v2";
-const PREDICTIONS_STORAGE_KEY = "mundial2026_predictions_v1";
+const CURRENT_PLAYER_KEY = "mundial2026_current_player";
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(window.innerWidth < 600);
@@ -170,7 +170,7 @@ function ScoreInput({ value, onChange, small = false }) {
   );
 }
 
-function MatchRow({ matchKey, teamA, teamB, date, scoreA, scoreB, onScoreChange, color, isMobile }) {
+function MatchRow({ matchKey, teamA, teamB, date, scoreA, scoreB, onScoreChange, color, isMobile, isPredictor = false }) {
   const played = scoreA !== "" && scoreB !== "";
   const sa = parseInt(scoreA), sb = parseInt(scoreB);
   const result = played ? (sa > sb ? "A" : sa < sb ? "B" : "D") : null;
@@ -508,15 +508,121 @@ function PollaTab({ isMobile, scores }) {
   );
 }
 
+function MyPredictionsTab({ isMobile, scores, onScoreChange, pollas, currentPlayerId, setCurrentPlayerId }) {
+  const [expandedGroups, setExpandedGroups] = useState({ A: true });
+
+  if (!currentPlayerId || !pollas.find(p => p.id === currentPlayerId)) {
+    return (
+      <div style={{ textAlign: "center", padding: "30px 16px" }}>
+        <p style={{ color: "#999", fontSize: 12 }}>Selecciona un jugador en la POLLA para editar sus predicciones</p>
+      </div>
+    );
+  }
+
+  const currentPlayer = pollas.find(p => p.id === currentPlayerId);
+
+  return (
+    <div>
+      <div style={{ background: "#1e2240", borderRadius: 12, padding: "12px", marginBottom: 14 }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", overflowX: "auto", paddingBottom: 4 }}>
+          {pollas.map(player => (
+            <button
+              key={player.id}
+              onClick={() => setCurrentPlayerId(player.id)}
+              style={{
+                padding: "8px 12px", borderRadius: 8, border: "none",
+                background: currentPlayerId === player.id ? "#f4c430" : "#2a2d4a",
+                color: currentPlayerId === player.id ? "#1a1a2e" : "#aaa",
+                fontWeight: currentPlayerId === player.id ? 700 : 500,
+                fontSize: 11, cursor: "pointer", whiteSpace: "nowrap"
+              }}
+            >
+              {player.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 12, alignItems: "center", flexWrap: "wrap" }}>
+        <button onClick={() => { const a={}; Object.keys(GROUP_MATCHES).forEach(g=>a[g]=true); setExpandedGroups(a); }} style={{ padding:"6px 10px",borderRadius:6,border:"1px solid #2a2d4a",background:"#1e2240",color:"#aaa",fontSize:10,cursor:"pointer" }}>↕ Exp</button>
+        <button onClick={() => setExpandedGroups({})} style={{ padding:"6px 10px",borderRadius:6,border:"1px solid #2a2d4a",background:"#1e2240",color:"#aaa",fontSize:10,cursor:"pointer" }}>↕ Col</button>
+        <span style={{ marginLeft:"auto",fontSize:10,color:"#444" }}>📋 Mis predicciones</span>
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2,1fr)", gap:10 }}>
+        {Object.entries(GROUP_MATCHES).map(([group, matches]) => {
+          const color = GROUP_COLORS[group];
+          const expanded = !!expandedGroups[group];
+          
+          return (
+            <div key={group} style={{ borderRadius:14, overflow:"hidden", boxShadow:"0 2px 14px rgba(0,0,0,0.09)", background:"white", border:`1px solid ${color}33` }}>
+              <button onClick={() => setExpandedGroups(prev=>({...prev,[group]:!prev[group]}))} style={{
+                width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between",
+                padding:isMobile?"11px 12px":"13px 16px", background:`linear-gradient(135deg,${color}20,${color}0a)`,
+                border:"none", cursor:"pointer", borderBottom: expanded?`2px solid ${color}44`:"none",
+                WebkitTapHighlightColor:"transparent",
+              }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <div style={{ width:32,height:32,borderRadius:8,background:color,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:14,color:"white",flexShrink:0 }}>{group}</div>
+                  <div style={{ textAlign:"left" }}>
+                    <div style={{ fontWeight:700,fontSize:isMobile?12:13,color:"#1a1a2e" }}>Mis predicciones</div>
+                  </div>
+                </div>
+                <span style={{ color:color,fontSize:14,display:"inline-block",transform:expanded?"rotate(180deg)":"none",transition:"transform 0.2s" }}>▾</span>
+              </button>
+
+              {expanded && (
+                <div style={{ padding:isMobile?"10px 10px":"12px 14px" }}>
+                  {matches.map((m, i) => {
+                    const [tA, tB] = m.match.split(" vs ");
+                    const matchKey = `${group}_${i}`;
+                    const predKey = `pred_${currentPlayerId}_${matchKey}`;
+                    return (
+                      <MatchRow
+                        key={matchKey}
+                        matchKey={predKey}
+                        teamA={tA}
+                        teamB={tB}
+                        date={m.date}
+                        scoreA={scores[predKey]?.A ?? ""}
+                        scoreB={scores[predKey]?.B ?? ""}
+                        onScoreChange={onScoreChange}
+                        color={color}
+                        isMobile={isMobile}
+                        isPredictor={true}
+                      />
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function Mundial2026() {
   const [scores, setScores] = useState({});
   const [expandedGroups, setExpandedGroups] = useState({ A:true });
   const [activeTab, setActiveTab] = useState("grupos");
   const [saved, setSaved] = useState(false);
+  const [pollas, setPollas] = useState([]);
+  const [currentPlayerId, setCurrentPlayerId] = useState(null);
   const isMobile = useIsMobile();
 
   useEffect(() => {
-    try { const s=localStorage.getItem(STORAGE_KEY); if(s) setScores(JSON.parse(s)); } catch(e){}
+    try { 
+      const s=localStorage.getItem(STORAGE_KEY); 
+      if(s) setScores(JSON.parse(s)); 
+      
+      const p=localStorage.getItem(POLLA_STORAGE_KEY);
+      if(p) setPollas(JSON.parse(p));
+      
+      const cp=localStorage.getItem(CURRENT_PLAYER_KEY);
+      if(cp) setCurrentPlayerId(parseInt(cp));
+    } catch(e){}
   },[]);
 
   const handleScoreChange = (key,side,value) => {
@@ -535,6 +641,11 @@ export default function Mundial2026() {
   const totalPlayed = Object.keys(scores).filter(k=>{
     const s=scores[k]; return !k.includes("name")&&!k.includes("pred_")&&s?.A!==""&&s?.B!==""&&s?.A!==undefined&&s?.B!==undefined;
   }).length;
+
+  const handleSetCurrentPlayer = (id) => {
+    setCurrentPlayerId(id);
+    try { localStorage.setItem(CURRENT_PLAYER_KEY, id.toString()); } catch(e){}
+  };
 
   const KO_ROUNDS = [
     { title:"16avos de Final",  prefix:"r32",  count:16, dates:"28 jun – 3 jul"  },
@@ -571,10 +682,10 @@ export default function Mundial2026() {
 
       {/* ── TABS ── */}
       <div style={{ background:"#111327",borderBottom:"1px solid #1e2240",display:"flex",maxWidth:900,margin:"0 auto",overflowX:"auto" }}>
-        {[["grupos","⚽ Grupos"],["eliminatoria","🏆 Elim"],["polla","🎲 Polla"]].map(([tab,label])=>(
+        {[["grupos","⚽ Grupos"],["eliminatoria","🏆 Elim"],["predicciones","📋 Pred"],["polla","🎲 Polla"]].map(([tab,label])=>(
           <button key={tab} onClick={()=>setActiveTab(tab)} style={{
             padding:"10px 14px",border:"none",background:"transparent",whiteSpace:"nowrap",
-            color:activeTab===tab?"#f4c430":"#777",fontWeight:activeTab===tab?700:500,fontSize:isMobile?11:12,
+            color:activeTab===tab?"#f4c430":"#777",fontWeight:activeTab===tab?700:500,fontSize:isMobile?10:11,
             cursor:"pointer",borderBottom:activeTab===tab?"3px solid #f4c430":"3px solid transparent",
             WebkitTapHighlightColor:"transparent",
           }}>{label}</button>
@@ -625,6 +736,10 @@ export default function Mundial2026() {
           </div>
         )}
 
+        {activeTab==="predicciones" && (
+          <MyPredictionsTab isMobile={isMobile} scores={scores} onScoreChange={handleScoreChange} pollas={pollas} currentPlayerId={currentPlayerId} setCurrentPlayerId={handleSetCurrentPlayer} />
+        )}
+
         {activeTab==="polla" && (
           <PollaTab isMobile={isMobile} scores={scores} />
         )}
@@ -633,10 +748,10 @@ export default function Mundial2026() {
       {/* ── STICKY BOTTOM NAV on mobile ── */}
       {isMobile && (
         <div style={{ position:"fixed",bottom:0,left:0,right:0,background:"#0d1023",borderTop:"1px solid #1e2240",display:"flex",zIndex:100 }}>
-          {[["grupos","⚽"],["eliminatoria","🏆"],["polla","🎲"]].map(([tab,label])=>(
+          {[["grupos","⚽"],["eliminatoria","🏆"],["predicciones","📋"],["polla","🎲"]].map(([tab,label])=>(
             <button key={tab} onClick={()=>setActiveTab(tab)} style={{
               flex:1,padding:"10px 0",border:"none",background:"transparent",
-              color:activeTab===tab?"#f4c430":"#666",fontWeight:activeTab===tab?700:500,fontSize:14,
+              color:activeTab===tab?"#f4c430":"#666",fontWeight:activeTab===tab?700:500,fontSize:13,
               cursor:"pointer",borderTop:activeTab===tab?"2px solid #f4c430":"2px solid transparent",
               WebkitTapHighlightColor:"transparent",
             }}>{label}</button>
