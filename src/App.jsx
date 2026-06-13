@@ -682,7 +682,7 @@ export default function Mundial2026() {
 
       {/* ── TABS ── */}
       <div style={{ background:"#111327",borderBottom:"1px solid #1e2240",display:"flex",maxWidth:900,margin:"0 auto",overflowX:"auto" }}>
-        {[["grupos","⚽ Grupos"],["eliminatoria","🏆 Elim"],["predicciones","📋 Pred"],["polla","🎲 Polla"]].map(([tab,label])=>(
+        {[["grupos","⚽ Grupos"],["eliminatoria","🏆 Elim"]].map(([tab,label])=>(
           <button key={tab} onClick={()=>setActiveTab(tab)} style={{
             padding:"10px 14px",border:"none",background:"transparent",whiteSpace:"nowrap",
             color:activeTab===tab?"#f4c430":"#777",fontWeight:activeTab===tab?700:500,fontSize:isMobile?10:11,
