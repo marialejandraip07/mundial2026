@@ -136,7 +136,8 @@ const GROUP_COLORS = {
 };
 
 const STORAGE_KEY = "mundial2026_scores_v2";
-const POLLA_STORAGE_KEY = "mundial2026_polla_v1";
+const POLLA_STORAGE_KEY = "mundial2026_polla_v2";
+const PREDICTIONS_STORAGE_KEY = "mundial2026_predictions_v1";
 
 function useIsMobile() {
   const [mobile, setMobile] = useState(window.innerWidth < 600);
@@ -148,7 +149,7 @@ function useIsMobile() {
   return mobile;
 }
 
-function ScoreInput({ value, onChange }) {
+function ScoreInput({ value, onChange, small = false }) {
   return (
     <input
       type="number" min="0" max="30"
@@ -156,11 +157,11 @@ function ScoreInput({ value, onChange }) {
       onChange={e => onChange(e.target.value)}
       placeholder="–"
       style={{
-        width: 40, height: 38, textAlign: "center",
-        fontSize: 17, fontWeight: 800,
+        width: small ? 32 : 40, height: small ? 32 : 38, textAlign: "center",
+        fontSize: small ? 14 : 17, fontWeight: 800,
         background: value !== "" ? "#fff9e6" : "#f4f4f8",
         border: value !== "" ? "2px solid #f4c430" : "2px solid #dde",
-        borderRadius: 8, outline: "none",
+        borderRadius: 6, outline: "none",
         color: "#1a1a2e", fontFamily: "'Courier New', monospace",
         MozAppearance: "textfield", WebkitAppearance: "none",
         touchAction: "manipulation",
@@ -169,24 +170,25 @@ function ScoreInput({ value, onChange }) {
   );
 }
 
-function MatchRow({ matchKey, teamA, teamB, date, scoreA, scoreB, onScoreChange, color }) {
+function MatchRow({ matchKey, teamA, teamB, date, scoreA, scoreB, onScoreChange, color, isMobile }) {
   const played = scoreA !== "" && scoreB !== "";
   const sa = parseInt(scoreA), sb = parseInt(scoreB);
   const result = played ? (sa > sb ? "A" : sa < sb ? "B" : "D") : null;
 
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 6,
-      padding: "9px 10px", borderRadius: 10, marginBottom: 5,
+      display: "flex", alignItems: "center", gap: isMobile ? 4 : 6,
+      padding: isMobile ? "7px 8px" : "9px 10px", borderRadius: 10, marginBottom: 5,
       background: played ? "#fff" : "rgba(255,255,255,0.72)",
       border: `1px solid ${played ? color+"55" : "#e4e6ee"}`,
       boxShadow: played ? `0 2px 8px ${color}18` : "none",
+      fontSize: isMobile ? 11 : 12,
     }}>
-      <span style={{ fontSize: 10, color: "#999", width: 36, flexShrink: 0, fontFamily: "monospace" }}>{date}</span>
+      <span style={{ fontSize: isMobile ? 9 : 10, color: "#999", width: 32, flexShrink: 0, fontFamily: "monospace" }}>{date}</span>
 
-      <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", overflow: "hidden" }}>
+      <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", overflow: "hidden", minWidth: 0 }}>
         <span style={{
-          fontSize: 12, fontWeight: result === "A" ? 800 : 500,
+          fontSize: isMobile ? 11 : 12, fontWeight: result === "A" ? 800 : 500,
           color: result === "A" ? "#111" : "#444",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           maxWidth: "100%",
@@ -195,15 +197,15 @@ function MatchRow({ matchKey, teamA, teamB, date, scoreA, scoreB, onScoreChange,
         </span>
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 3, flexShrink: 0 }}>
-        <ScoreInput value={scoreA} onChange={v => onScoreChange(matchKey, "A", v)} />
-        <span style={{ color: "#bbb", fontWeight: 700, fontSize: 15, userSelect: "none" }}>:</span>
-        <ScoreInput value={scoreB} onChange={v => onScoreChange(matchKey, "B", v)} />
+      <div style={{ display: "flex", alignItems: "center", gap: 2, flexShrink: 0 }}>
+        <ScoreInput value={scoreA} onChange={v => onScoreChange(matchKey, "A", v)} small={isMobile} />
+        <span style={{ color: "#bbb", fontWeight: 700, fontSize: isMobile ? 12 : 15, userSelect: "none" }}>:</span>
+        <ScoreInput value={scoreB} onChange={v => onScoreChange(matchKey, "B", v)} small={isMobile} />
       </div>
 
-      <div style={{ flex: 1, overflow: "hidden" }}>
+      <div style={{ flex: 1, overflow: "hidden", minWidth: 0 }}>
         <span style={{
-          fontSize: 12, fontWeight: result === "B" ? 800 : 500,
+          fontSize: isMobile ? 11 : 12, fontWeight: result === "B" ? 800 : 500,
           color: result === "B" ? "#111" : "#444",
           whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
           display: "block",
@@ -266,7 +268,7 @@ function StandingsTable({ group, teams, scores }) {
   );
 }
 
-function GroupSection({ group, teams, scores, onScoreChange, expanded, onToggle }) {
+function GroupSection({ group, teams, scores, onScoreChange, expanded, onToggle, isMobile }) {
   const color = GROUP_COLORS[group];
   const playedCount = GROUP_MATCHES[group].filter((_,i) => {
     const k=`${group}_${i}`; const s=scores[k];
@@ -277,33 +279,33 @@ function GroupSection({ group, teams, scores, onScoreChange, expanded, onToggle 
     <div style={{ borderRadius:14, overflow:"hidden", boxShadow:"0 2px 14px rgba(0,0,0,0.09)", background:"white", border:`1px solid ${color}33` }}>
       <button onClick={onToggle} style={{
         width:"100%", display:"flex", alignItems:"center", justifyContent:"space-between",
-        padding:"13px 16px", background:`linear-gradient(135deg,${color}20,${color}0a)`,
+        padding:isMobile?"11px 12px":"13px 16px", background:`linear-gradient(135deg,${color}20,${color}0a)`,
         border:"none", cursor:"pointer", borderBottom: expanded?`2px solid ${color}44`:"none",
         WebkitTapHighlightColor:"transparent",
       }}>
-        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:34,height:34,borderRadius:9,background:color,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:15,color:"white",flexShrink:0 }}>{group}</div>
+        <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+          <div style={{ width:32,height:32,borderRadius:8,background:color,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:900,fontSize:14,color:"white",flexShrink:0 }}>{group}</div>
           <div style={{ textAlign:"left" }}>
-            <div style={{ fontWeight:700,fontSize:13,color:"#1a1a2e",lineHeight:1.3 }}>
+            <div style={{ fontWeight:700,fontSize:isMobile?12:13,color:"#1a1a2e",lineHeight:1.3 }}>
               {teams.map(t=>FLAG_EMOJIS[t]||"🏳").join(" ")}
             </div>
-            <div style={{ fontSize:10,color:"#999",marginTop:1 }}>{playedCount}/6 jugados</div>
+            <div style={{ fontSize:9,color:"#999",marginTop:1 }}>{playedCount}/6</div>
           </div>
         </div>
-        <div style={{ display:"flex",alignItems:"center",gap:8 }}>
-          <div style={{ background:playedCount===6?"#2ecc71":color,color:"white",borderRadius:20,padding:"2px 10px",fontSize:11,fontWeight:700 }}>{playedCount}/6</div>
-          <span style={{ color:color,fontSize:16,display:"inline-block",transform:expanded?"rotate(180deg)":"none",transition:"transform 0.2s" }}>▾</span>
+        <div style={{ display:"flex",alignItems:"center",gap:6 }}>
+          <div style={{ background:playedCount===6?"#2ecc71":color,color:"white",borderRadius:20,padding:"2px 8px",fontSize:10,fontWeight:700 }}>{playedCount}</div>
+          <span style={{ color:color,fontSize:14,display:"inline-block",transform:expanded?"rotate(180deg)":"none",transition:"transform 0.2s" }}>▾</span>
         </div>
       </button>
 
       {expanded && (
-        <div style={{ padding:"12px 14px" }}>
+        <div style={{ padding:isMobile?"10px 10px":"12px 14px" }}>
           {GROUP_MATCHES[group].map((m,i)=>{
             const [tA,tB]=m.match.split(" vs "), key=`${group}_${i}`;
             return (
               <MatchRow key={key} matchKey={key} teamA={tA} teamB={tB} date={m.date}
                 scoreA={scores[key]?.A??""} scoreB={scores[key]?.B??""}
-                onScoreChange={onScoreChange} color={color} />
+                onScoreChange={onScoreChange} color={color} isMobile={isMobile} />
             );
           })}
           <StandingsTable group={group} teams={teams} scores={scores} />
@@ -313,7 +315,7 @@ function GroupSection({ group, teams, scores, onScoreChange, expanded, onToggle 
   );
 }
 
-function KOMatch({ matchKey, scores, onScoreChange }) {
+function KOMatchCompact({ matchKey, scores, onScoreChange, isMobile }) {
   const sA = scores[matchKey]?.A ?? "";
   const sB = scores[matchKey]?.B ?? "";
   const nameA = scores[`${matchKey}_nameA`]?.A ?? "";
@@ -321,17 +323,17 @@ function KOMatch({ matchKey, scores, onScoreChange }) {
   const played = sA!==""&&sB!=="";
 
   return (
-    <div style={{ background:played?"#fff":"rgba(255,255,255,0.05)", borderRadius:10, padding:"10px 12px", border:`1px solid ${played?"#f4c43055":"#1e2240"}`, marginBottom:6 }}>
-      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-        <input type="text" placeholder="Equipo A" value={nameA}
+    <div style={{ background:played?"#fff":"rgba(255,255,255,0.05)", borderRadius:10, padding:isMobile?"8px":"10px 12px", border:`1px solid ${played?"#f4c43055":"#1e2240"}`, marginBottom:6 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:isMobile?4:6, flexWrap:isMobile?"wrap":"nowrap" }}>
+        <input type="text" placeholder="A" value={nameA}
           onChange={e=>onScoreChange(`${matchKey}_nameA`,"A",e.target.value)}
-          style={{ flex:1,background:"rgba(255,255,255,0.07)",border:"1px solid #2a2d4a",borderRadius:6,padding:"5px 7px",color:played?"#111":"#ccc",fontSize:11,outline:"none",minWidth:0 }} />
-        <ScoreInput value={sA} onChange={v=>onScoreChange(matchKey,"A",v)} />
-        <span style={{ color:"#555",fontWeight:700,userSelect:"none" }}>:</span>
-        <ScoreInput value={sB} onChange={v=>onScoreChange(matchKey,"B",v)} />
-        <input type="text" placeholder="Equipo B" value={nameB}
+          style={{ flex:isMobile?0.8:1, minWidth:isMobile?50:0, padding:isMobile?"6px 6px":"5px 7px", borderRadius:6, fontSize:isMobile?10:11, border:"1px solid #2a2d4a",background:"rgba(255,255,255,0.07)",color:played?"#111":"#ccc",outline:"none" }} />
+        <ScoreInput value={sA} onChange={v=>onScoreChange(matchKey,"A",v)} small={isMobile} />
+        <span style={{ color:"#bbb",fontWeight:700,userSelect:"none",fontSize:isMobile?12:13 }}>:</span>
+        <ScoreInput value={sB} onChange={v=>onScoreChange(matchKey,"B",v)} small={isMobile} />
+        <input type="text" placeholder="B" value={nameB}
           onChange={e=>onScoreChange(`${matchKey}_nameB`,"B",e.target.value)}
-          style={{ flex:1,background:"rgba(255,255,255,0.07)",border:"1px solid #2a2d4a",borderRadius:6,padding:"5px 7px",color:played?"#111":"#ccc",fontSize:11,outline:"none",minWidth:0 }} />
+          style={{ flex:isMobile?0.8:1, minWidth:isMobile?50:0, padding:isMobile?"6px 6px":"5px 7px", borderRadius:6, fontSize:isMobile?10:11, border:"1px solid #2a2d4a",background:"rgba(255,255,255,0.07)",color:played?"#111":"#ccc",outline:"none" }} />
       </div>
     </div>
   );
@@ -340,7 +342,6 @@ function KOMatch({ matchKey, scores, onScoreChange }) {
 function PollaTab({ isMobile, scores }) {
   const [pollas, setPollas] = useState([]);
   const [newPlayerName, setNewPlayerName] = useState("");
-  const [pollaName, setPollaName] = useState("Polla 2026");
 
   useEffect(() => {
     try {
@@ -358,7 +359,7 @@ function PollaTab({ isMobile, scores }) {
 
   const addPlayer = () => {
     if (newPlayerName.trim()) {
-      const newPollas = [...pollas, { id: Date.now(), name: newPlayerName, points: 0, createdAt: new Date().toISOString() }];
+      const newPollas = [...pollas, { id: Date.now(), name: newPlayerName }];
       savePollas(newPollas);
       setNewPlayerName("");
     }
@@ -369,28 +370,51 @@ function PollaTab({ isMobile, scores }) {
     savePollas(updated);
   };
 
-  const calculatePoints = (player) => {
+  const calculatePoints = (playerId) => {
     let pts = 0;
-    Object.keys(scores).forEach(k => {
-      if (k.includes("name")) return;
-      const s = scores[k];
-      if (s?.A !== "" && s?.B !== "" && s?.A !== undefined && s?.B !== undefined) {
-        const a = parseInt(s.A), b = parseInt(s.B);
-        if (a > b) pts += 3;
-        else if (a === b) pts += 1;
-      }
+    let correctMarkers = 0;
+    let correctWinner = 0;
+    
+    Object.keys(GROUP_MATCHES).forEach(group => {
+      GROUP_MATCHES[group].forEach((m, i) => {
+        const matchKey = `${group}_${i}`;
+        const realScore = scores[matchKey];
+        
+        if (realScore?.A !== "" && realScore?.B !== "" && realScore?.A !== undefined && realScore?.B !== undefined) {
+          const predKey = `pred_${playerId}_${matchKey}`;
+          const prediction = scores[predKey];
+          
+          if (prediction?.A !== "" && prediction?.B !== "" && prediction?.A !== undefined && prediction?.B !== undefined) {
+            const realA = parseInt(realScore.A);
+            const realB = parseInt(realScore.B);
+            const predA = parseInt(prediction.A);
+            const predB = parseInt(prediction.B);
+            
+            // +3 si acierta marcador exacto
+            if (realA === predA && realB === predB) {
+              pts += 3;
+              correctMarkers++;
+            } 
+            // +2 si acierta ganador
+            else if ((realA > realB && predA > predB) || (realA < realB && predA < predB) || (realA === realB && predA === predB)) {
+              pts += 2;
+              correctWinner++;
+            }
+          }
+        }
+      });
     });
-    return pts;
+    
+    return { total: pts, markers: correctMarkers, winner: correctWinner };
   };
 
-  const sortedPollas = [...pollas].sort((a, b) => calculatePoints(b) - calculatePoints(a));
+  const sortedPollas = [...pollas].sort((a, b) => calculatePoints(b.id).total - calculatePoints(a.id).total);
 
   return (
     <div>
-      {/* Agregar participante */}
-      <div style={{ background: "#1e2240", borderRadius: 12, padding: "16px", marginBottom: 20 }}>
-        <h3 style={{ margin: "0 0 12px 0", color: "#f4c430", fontSize: 14, fontWeight: 700 }}>📝 Agregar Participante</h3>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+      <div style={{ background: "#1e2240", borderRadius: 12, padding: "14px", marginBottom: 16 }}>
+        <h3 style={{ margin: "0 0 10px 0", color: "#f4c430", fontSize: 13, fontWeight: 700 }}>📝 Agregar Participante</h3>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           <input
             type="text"
             placeholder="Nombre del jugador"
@@ -398,17 +422,17 @@ function PollaTab({ isMobile, scores }) {
             onChange={e => setNewPlayerName(e.target.value)}
             onKeyPress={e => e.key === "Enter" && addPlayer()}
             style={{
-              flex: 1, minWidth: 150, padding: "10px 12px", borderRadius: 8,
+              flex: 1, minWidth: 140, padding: "8px 10px", borderRadius: 6,
               border: "1px solid #2a2d4a", background: "rgba(255,255,255,0.05)",
-              color: "#fff", fontSize: 12, outline: "none"
+              color: "#fff", fontSize: 11, outline: "none"
             }}
           />
           <button
             onClick={addPlayer}
             style={{
-              padding: "10px 18px", borderRadius: 8, border: "none",
+              padding: "8px 14px", borderRadius: 6, border: "none",
               background: "#f4c430", color: "#1a1a2e", fontWeight: 700,
-              fontSize: 12, cursor: "pointer"
+              fontSize: 11, cursor: "pointer", whiteSpace: "nowrap"
             }}
           >
             + Agregar
@@ -416,51 +440,50 @@ function PollaTab({ isMobile, scores }) {
         </div>
       </div>
 
-      {/* Ranking */}
       <div style={{ background: "rgba(255,255,255,0.02)", borderRadius: 12, overflow: "hidden", border: "1px solid #1e2240" }}>
-        <div style={{ background: "#f4c43020", padding: "14px 16px", borderBottom: "1px solid #1e2240" }}>
-          <h3 style={{ margin: 0, color: "#f4c430", fontSize: 14, fontWeight: 700 }}>🏆 Ranking de Participantes</h3>
+        <div style={{ background: "#f4c43020", padding: "12px 14px", borderBottom: "1px solid #1e2240" }}>
+          <h3 style={{ margin: 0, color: "#f4c430", fontSize: 13, fontWeight: 700 }}>🏆 Ranking</h3>
         </div>
 
         {sortedPollas.length === 0 ? (
-          <div style={{ padding: "40px 16px", textAlign: "center", color: "#666" }}>
-            <p style={{ fontSize: 12, margin: 0 }}>No hay participantes aún. ¡Agrega uno!</p>
+          <div style={{ padding: "30px 16px", textAlign: "center", color: "#666" }}>
+            <p style={{ fontSize: 12, margin: 0 }}>No hay participantes. ¡Agrega uno!</p>
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11, minWidth: "100%" }}>
               <thead>
                 <tr style={{ background: "#1e2240" }}>
-                  <th style={{ padding: "12px", textAlign: "center", color: "#f4c430", fontWeight: 700, width: 40 }}>#</th>
-                  <th style={{ padding: "12px", textAlign: "left", color: "#f4c430", fontWeight: 700 }}>Jugador</th>
-                  <th style={{ padding: "12px", textAlign: "center", color: "#f4c430", fontWeight: 700, width: 60 }}>Puntos</th>
-                  <th style={{ padding: "12px", textAlign: "center", color: "#f4c430", fontWeight: 700, width: 50 }}>Acción</th>
+                  <th style={{ padding: "10px 8px", textAlign: "center", color: "#f4c430", fontWeight: 700, width: 35 }}>#</th>
+                  <th style={{ padding: "10px 8px", textAlign: "left", color: "#f4c430", fontWeight: 700, flex: 1 }}>Jugador</th>
+                  <th style={{ padding: "10px 8px", textAlign: "center", color: "#f4c430", fontWeight: 700, width: 50 }}>Pts</th>
+                  <th style={{ padding: "10px 8px", textAlign: "center", color: "#f4c430", fontWeight: 700, width: 45 }}>Acc</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedPollas.map((player, idx) => {
                   const medal = idx === 0 ? "🥇" : idx === 1 ? "🥈" : idx === 2 ? "🥉" : "";
-                  const pts = calculatePoints(player);
+                  const pts = calculatePoints(player.id).total;
                   return (
                     <tr key={player.id} style={{ 
                       background: idx < 3 ? `rgba(244,196,48,${0.1 - idx * 0.03})` : "transparent",
                       borderBottom: "1px solid #1e2240"
                     }}>
-                      <td style={{ padding: "12px", textAlign: "center", fontWeight: 700, color: "#f4c430" }}>
+                      <td style={{ padding: "10px 8px", textAlign: "center", fontWeight: 700, color: "#f4c430" }}>
                         {medal || (idx + 1)}
                       </td>
-                      <td style={{ padding: "12px", textAlign: "left", fontWeight: 600, color: idx < 3 ? "#f4c430" : "#ccc" }}>
+                      <td style={{ padding: "10px 8px", textAlign: "left", fontWeight: 600, color: idx < 3 ? "#f4c430" : "#ccc", display:"flex",alignItems:"center",gap:6 }}>
                         {player.name}
                       </td>
-                      <td style={{ padding: "12px", textAlign: "center", fontWeight: 800, color: idx < 3 ? "#f4c430" : "#999", fontSize: 14 }}>
+                      <td style={{ padding: "10px 8px", textAlign: "center", fontWeight: 800, color: idx < 3 ? "#f4c430" : "#999", fontSize: 13 }}>
                         {pts}
                       </td>
-                      <td style={{ padding: "12px", textAlign: "center" }}>
+                      <td style={{ padding: "10px 4px", textAlign: "center" }}>
                         <button
                           onClick={() => deletePlayer(player.id)}
                           style={{
-                            padding: "6px 10px", borderRadius: 6, border: "1px solid #e74c3c",
-                            background: "transparent", color: "#e74c3c", fontSize: 11,
+                            padding: "4px 8px", borderRadius: 4, border: "1px solid #e74c3c",
+                            background: "transparent", color: "#e74c3c", fontSize: 10,
                             cursor: "pointer", fontWeight: 600
                           }}
                         >
@@ -476,13 +499,9 @@ function PollaTab({ isMobile, scores }) {
         )}
       </div>
 
-      {/* Info */}
-      <div style={{ marginTop: 20, padding: "12px 14px", background: "rgba(52,152,219,0.1)", borderRadius: 8, borderLeft: "3px solid #3498db" }}>
-        <p style={{ margin: 0, fontSize: 11, color: "#999", lineHeight: 1.5 }}>
-          💡 Los puntos se calculan automáticamente basado en tus predicciones:
-          <br />• +3 puntos por acertar un ganador
-          <br />• +1 punto por acertar un empate
-          <br />• El ranking se actualiza en tiempo real
+      <div style={{ marginTop: 14, padding: "10px 12px", background: "rgba(52,152,219,0.1)", borderRadius: 8, borderLeft: "3px solid #3498db" }}>
+        <p style={{ margin: 0, fontSize: 10, color: "#999", lineHeight: 1.4 }}>
+          💡 +3 pts: Marcador exacto | +2 pts: Solo ganador | +0: Error
         </p>
       </div>
     </div>
@@ -514,7 +533,7 @@ export default function Mundial2026() {
   const collapseAll= () => setExpandedGroups({});
 
   const totalPlayed = Object.keys(scores).filter(k=>{
-    const s=scores[k]; return !k.includes("name")&&s?.A!==""&&s?.B!==""&&s?.A!==undefined&&s?.B!==undefined;
+    const s=scores[k]; return !k.includes("name")&&!k.includes("pred_")&&s?.A!==""&&s?.B!==""&&s?.A!==undefined&&s?.B!==undefined;
   }).length;
 
   const KO_ROUNDS = [
@@ -526,36 +545,36 @@ export default function Mundial2026() {
   ];
 
   return (
-    <div style={{ minHeight:"100vh", background:"linear-gradient(160deg,#0a0e27 0%,#1a1a3e 40%,#0d2137 100%)", fontFamily:"'Segoe UI',system-ui,sans-serif" }}>
+    <div style={{ minHeight:"100vh", background:"linear-gradient(160deg,#0a0e27 0%,#1a1a3e 40%,#0d2137 100%)", fontFamily:"'Segoe UI',system-ui,sans-serif", overflow:"hidden" }}>
 
       {/* ── HEADER ── */}
-      <div style={{ background:"linear-gradient(135deg,#c8002a 0%,#006233 100%)", padding:"18px 16px 14px", position:"relative", overflow:"hidden" }}>
+      <div style={{ background:"linear-gradient(135deg,#c8002a 0%,#006233 100%)", padding:"16px 14px 12px", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute",top:-30,right:-30,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.05)" }}/>
         <div style={{ maxWidth:900,margin:"0 auto" }}>
-          <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:10 }}>
-            <div style={{ fontSize:isMobile?30:38 }}>🏆</div>
+          <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:8 }}>
+            <div style={{ fontSize:isMobile?28:36 }}>🏆</div>
             <div>
-              <h1 style={{ margin:0,color:"white",fontSize:isMobile?17:22,fontWeight:900,letterSpacing:-0.5,lineHeight:1.2 }}>COPA MUNDIAL FIFA 2026</h1>
-              <p style={{ margin:0,color:"rgba(255,255,255,0.75)",fontSize:isMobile?10:12,marginTop:2 }}>
-                🇺🇸 EE.UU. · 🇨🇦 Canadá · 🇲🇽 México &nbsp;|&nbsp; 11 jun – 19 jul
+              <h1 style={{ margin:0,color:"white",fontSize:isMobile?16:21,fontWeight:900,letterSpacing:-0.5,lineHeight:1.2 }}>FIFA 2026</h1>
+              <p style={{ margin:0,color:"rgba(255,255,255,0.75)",fontSize:isMobile?9:11,marginTop:1 }}>
+                🇺🇸 🇨🇦 🇲🇽 &nbsp;|&nbsp; 11 jun – 19 jul
               </p>
             </div>
           </div>
-          <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
-            {[["48 selecciones","rgba(255,255,255,0.18)","white"],["104 partidos","rgba(255,255,255,0.18)","white"],[`⚽ ${totalPlayed} cargados`,"rgba(244,196,48,0.9)","#1a1a2e"]].map(([label,bg,color])=>(
-              <div key={label} style={{ background:bg,borderRadius:20,padding:"3px 12px",color,fontSize:11,fontWeight:700 }}>{label}</div>
+          <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
+            {[["48 selecciones","rgba(255,255,255,0.18)","white"],["104 partidos","rgba(255,255,255,0.18)","white"],[`⚽ ${totalPlayed}`,"rgba(244,196,48,0.9)","#1a1a2e"]].map(([label,bg,color])=>(
+              <div key={label} style={{ background:bg,borderRadius:16,padding:"2px 10px",color,fontSize:10,fontWeight:700 }}>{label}</div>
             ))}
-            {saved&&<div style={{ background:"rgba(46,204,113,0.9)",borderRadius:20,padding:"3px 12px",color:"white",fontSize:11,fontWeight:600 }}>✓ Guardado</div>}
+            {saved&&<div style={{ background:"rgba(46,204,113,0.9)",borderRadius:16,padding:"2px 10px",color:"white",fontSize:10,fontWeight:600 }}>✓</div>}
           </div>
         </div>
       </div>
 
       {/* ── TABS ── */}
       <div style={{ background:"#111327",borderBottom:"1px solid #1e2240",display:"flex",maxWidth:900,margin:"0 auto",overflowX:"auto" }}>
-        {[["grupos","⚽ Grupos"],["eliminatoria","🏆 Eliminatoria"],["polla","🎲 Polla"]].map(([tab,label])=>(
+        {[["grupos","⚽ Grupos"],["eliminatoria","🏆 Elim"],["polla","🎲 Polla"]].map(([tab,label])=>(
           <button key={tab} onClick={()=>setActiveTab(tab)} style={{
-            padding:"11px 18px",border:"none",background:"transparent",whiteSpace:"nowrap",
-            color:activeTab===tab?"#f4c430":"#777",fontWeight:activeTab===tab?700:500,fontSize:13,
+            padding:"10px 14px",border:"none",background:"transparent",whiteSpace:"nowrap",
+            color:activeTab===tab?"#f4c430":"#777",fontWeight:activeTab===tab?700:500,fontSize:isMobile?11:12,
             cursor:"pointer",borderBottom:activeTab===tab?"3px solid #f4c430":"3px solid transparent",
             WebkitTapHighlightColor:"transparent",
           }}>{label}</button>
@@ -563,21 +582,21 @@ export default function Mundial2026() {
       </div>
 
       {/* ── CONTENT ── */}
-      <div style={{ maxWidth:900,margin:"0 auto",padding:isMobile?"12px 10px 48px":"16px 14px 48px" }}>
+      <div style={{ maxWidth:900,margin:"0 auto",padding:isMobile?"10px 8px 50px":"14px 12px 40px",overflowX:"hidden" }}>
 
         {activeTab==="grupos" && (
           <>
-            <div style={{ display:"flex",gap:8,marginBottom:14,alignItems:"center",flexWrap:"wrap" }}>
-              <button onClick={expandAll}   style={{ padding:"7px 14px",borderRadius:8,border:"1px solid #2a2d4a",background:"#1e2240",color:"#aaa",fontSize:12,cursor:"pointer" }}>↕ Expandir todo</button>
-              <button onClick={collapseAll} style={{ padding:"7px 14px",borderRadius:8,border:"1px solid #2a2d4a",background:"#1e2240",color:"#aaa",fontSize:12,cursor:"pointer" }}>↕ Colapsar todo</button>
-              <span style={{ marginLeft:"auto",fontSize:11,color:"#444" }}>💾 auto-guardado</span>
+            <div style={{ display:"flex",gap:6,marginBottom:12,alignItems:"center",flexWrap:"wrap" }}>
+              <button onClick={expandAll}   style={{ padding:"6px 10px",borderRadius:6,border:"1px solid #2a2d4a",background:"#1e2240",color:"#aaa",fontSize:10,cursor:"pointer" }}>↕ Exp</button>
+              <button onClick={collapseAll} style={{ padding:"6px 10px",borderRadius:6,border:"1px solid #2a2d4a",background:"#1e2240",color:"#aaa",fontSize:10,cursor:"pointer" }}>↕ Col</button>
+              <span style={{ marginLeft:"auto",fontSize:10,color:"#444" }}>💾 Auto</span>
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2,1fr)", gap:12 }}>
+            <div style={{ display:"grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2,1fr)", gap:10 }}>
               {Object.entries(GROUPS).map(([g,teams])=>(
                 <GroupSection key={g} group={g} teams={teams} scores={scores}
                   onScoreChange={handleScoreChange}
-                  expanded={!!expandedGroups[g]} onToggle={()=>toggleGroup(g)} />
+                  expanded={!!expandedGroups[g]} onToggle={()=>toggleGroup(g)} isMobile={isMobile} />
               ))}
             </div>
           </>
@@ -585,20 +604,20 @@ export default function Mundial2026() {
 
         {activeTab==="eliminatoria" && (
           <div>
-            <p style={{ color:"#666",fontSize:12,marginBottom:18,textAlign:"center" }}>
-              Anotá los cruces de la fase eliminatoria a medida que se definen.<br/>
-              <span style={{ color:"#f4c430",fontWeight:700 }}>Escribí los nombres de los equipos y los resultados.</span>
+            <p style={{ color:"#666",fontSize:11,marginBottom:14,textAlign:"center" }}>
+              Predicciones eliminatoria<br/>
+              <span style={{ color:"#f4c430",fontWeight:700,fontSize:10 }}>Los equipos se rellenan automáticamente</span>
             </p>
             {KO_ROUNDS.map(({ title,prefix,count,dates })=>(
-              <div key={prefix} style={{ marginBottom:22 }}>
-                <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:10 }}>
-                  <div style={{ height:3,width:4,background:"#f4c430",borderRadius:2 }}/>
-                  <h3 style={{ margin:0,fontSize:13,fontWeight:800,color:"#f4c430",textTransform:"uppercase",letterSpacing:0.8 }}>{title}</h3>
-                  <span style={{ fontSize:11,color:"#555",fontStyle:"italic" }}>{dates}</span>
+              <div key={prefix} style={{ marginBottom:16 }}>
+                <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:8 }}>
+                  <div style={{ height:2,width:3,background:"#f4c430",borderRadius:1 }}/>
+                  <h3 style={{ margin:0,fontSize:12,fontWeight:800,color:"#f4c430",textTransform:"uppercase",letterSpacing:0.5 }}>{title}</h3>
+                  <span style={{ fontSize:9,color:"#555",fontStyle:"italic",marginLeft:"auto" }}>{dates}</span>
                 </div>
-                <div style={{ display:"grid",gridTemplateColumns:isMobile?"1fr":count===1?"1fr":"repeat(2,1fr)",gap:8 }}>
+                <div style={{ display:"grid",gridTemplateColumns:isMobile?"1fr":count===1?"1fr":"repeat(2,1fr)",gap:6 }}>
                   {Array.from({length:count},(_,i)=>(
-                    <KOMatch key={`${prefix}_${i}`} matchKey={`${prefix}_${i}`} scores={scores} onScoreChange={handleScoreChange} />
+                    <KOMatchCompact key={`${prefix}_${i}`} matchKey={`${prefix}_${i}`} scores={scores} onScoreChange={handleScoreChange} isMobile={isMobile} />
                   ))}
                 </div>
               </div>
@@ -614,10 +633,10 @@ export default function Mundial2026() {
       {/* ── STICKY BOTTOM NAV on mobile ── */}
       {isMobile && (
         <div style={{ position:"fixed",bottom:0,left:0,right:0,background:"#0d1023",borderTop:"1px solid #1e2240",display:"flex",zIndex:100 }}>
-          {[["grupos","⚽ Grupos"],["eliminatoria","🏆 Eliminatoria"],["polla","🎲 Polla"]].map(([tab,label])=>(
+          {[["grupos","⚽"],["eliminatoria","🏆"],["polla","🎲"]].map(([tab,label])=>(
             <button key={tab} onClick={()=>setActiveTab(tab)} style={{
-              flex:1,padding:"12px 0",border:"none",background:"transparent",
-              color:activeTab===tab?"#f4c430":"#666",fontWeight:activeTab===tab?700:500,fontSize:12,
+              flex:1,padding:"10px 0",border:"none",background:"transparent",
+              color:activeTab===tab?"#f4c430":"#666",fontWeight:activeTab===tab?700:500,fontSize:14,
               cursor:"pointer",borderTop:activeTab===tab?"2px solid #f4c430":"2px solid transparent",
               WebkitTapHighlightColor:"transparent",
             }}>{label}</button>
