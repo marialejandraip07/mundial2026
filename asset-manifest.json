@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/mundial2026/static/js/main.ba80915c.js",
+    "main.js": "/mundial2026/static/js/main.d811b2c0.js",
     "index.html": "/mundial2026/index.html",
-    "main.ba80915c.js.map": "/mundial2026/static/js/main.ba80915c.js.map"
+    "main.d811b2c0.js.map": "/mundial2026/static/js/main.d811b2c0.js.map"
   },
   "entrypoints": [
-    "static/js/main.ba80915c.js"
+    "static/js/main.d811b2c0.js"
   ]
 }
